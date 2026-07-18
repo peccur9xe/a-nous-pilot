@@ -1,7 +1,7 @@
 {
   "name": "À nous — concierge de groupe",
   "short_name": "À nous",
-  "description": "L’assistant qui organise les sorties de votre groupe.",
+  "description": "L’assistant qui trouve une date et organise les sorties de vos groupes.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
