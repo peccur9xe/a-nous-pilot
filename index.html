@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
   <div class="app-shell">
@@ -23,12 +23,12 @@
     <main id="app" aria-live="polite"></main>
 
     <nav class="tabbar" aria-label="Navigation principale">
-      <button type="button" data-tab="home" class="active"><span>✦</span><small>Assistant</small></button>
-      <button type="button" data-tab="groups"><span>●●●</span><small>Groupe</small></button>
-      <button type="button" data-tab="outings"><span>◫</span><small>Sorties</small></button>
-      <button type="button" data-tab="privacy"><span>◎</span><small>Moi</small></button>
+      <button type="button" data-tab="groups" class="active"><span>●●●</span><small>Groupes</small></button>
+      <button type="button" data-tab="assistant"><span>✦</span><small>Assistant</small></button>
+      <button type="button" data-tab="activities"><span>◫</span><small>Activités</small></button>
+      <button type="button" data-tab="profile"><span>◎</span><small>Moi</small></button>
     </nav>
   </div>
-  <script src="app.js" defer></script>
+  <script src="app.js?v=2" defer></script>
 </body>
 </html>
