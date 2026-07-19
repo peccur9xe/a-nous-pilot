@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'a-nous-pilot-v3';
+const STORAGE_KEY = 'a-nous-pilot-v4';
 
 const people = { david: member('david','David','app',true,true,true,true) };
 
@@ -25,6 +25,7 @@ const groupMembers = {
 
 const defaultState = {
   selectedGroupId:'circl1',
+  selectedSuggestionId:'bistro-17',
   groups:[
     { id:'circl1',name:'CIRCL 1',type:'Amis',icon:'🥂',members:groupMembers.circl1 },
     { id:'circl2',name:'CIRCL 2',type:'Amis',icon:'🥂',members:groupMembers.circl2 },
@@ -33,6 +34,11 @@ const defaultState = {
     { id:'famil1',name:'FAMIL 1',type:'Famille',icon:'🏡',members:groupMembers.famil1 },
     { id:'famil2',name:'FAMIL 2',type:'Famille',icon:'🏡',members:groupMembers.famil2 },
     { id:'belfamil',name:'BEL FAMIL',type:'Famille',icon:'🏡',members:groupMembers.belfamil }
+  ],
+  suggestions:[
+    {id:'bistro-17',groupId:'circl1',tag:'Le choix du concierge',title:'Dîner & billard',venue:'Le Cercle des Batignolles',area:'Paris 17e',period:'Jeudi ou vendredi · 20 h',price:'45–60 € / pers.',rating:'4,7',image:'venue-bistro.jpg',mapUrl:'https://www.google.com/maps/search/?api=1&query=restaurant+billard+Paris+17',description:'Une table chaleureuse et qualitative, puis une partie de billard sans changer d’adresse.',match:'94% adapté au groupe'},
+    {id:'family-garden',groupId:'famil1',tag:'Dimanche ensemble',title:'Grand déjeuner au jardin',venue:'La Maison des Étangs',area:'Ouest parisien',period:'Un dimanche · 12 h 30',price:'35–50 € / pers.',rating:'4,8',image:'venue-family.jpg',mapUrl:'https://www.google.com/maps/search/?api=1&query=restaurant+jardin+famille+ouest+parisien',description:'Une grande tablée au calme, accessible à toutes les générations et pensée pour prendre son temps.',match:'91% adapté au groupe'},
+    {id:'taff-rooftop',groupId:'taff',tag:'Après le bureau',title:'Verre sur les toits',venue:'Le Perchoir Central',area:'Paris centre',period:'Jeudi · dès 19 h',price:'20–35 € / pers.',rating:'4,6',image:'venue-rooftop.jpg',mapUrl:'https://www.google.com/maps/search/?api=1&query=rooftop+Paris+centre',description:'Un rooftop élégant mais détendu pour décrocher ensemble avec une belle vue sur Paris.',match:'89% adapté au groupe'}
   ],
   activities:[
     {
@@ -93,20 +99,47 @@ function render() {
 }
 
 function renderGroups() {
-  const active=state.activities.filter(activity=>!activity.date).length;
+  const suggestion=state.suggestions.find(item=>item.id===state.selectedSuggestionId)||state.suggestions[0];
   app.innerHTML=`<section>
-    <div class="page-intro"><div class="eyebrow">Tableau de bord</div><h1>Mes groupes</h1><p class="lead">Chaque groupe a ses envies, ses habitudes et ses activités en cours.</p></div>
-    <div class="hero-action"><div class="eyebrow">${active} organisations en cours</div><h2>Trouvons enfin une date</h2><p>Je collecte les réponses et relance les personnes manquantes jusqu’à obtenir un créneau exploitable.</p><button class="primary" id="newPlan">Proposer une activité</button></div>
-    <div class="section-head"><h2>${state.groups.length} groupes</h2><button class="secondary" id="addGroup">+ Créer</button></div>
-    <div class="group-grid">${state.groups.map(group=>groupCard(group)).join('')}</div>
-    <div id="groupForm"></div>
+    <div class="home-hello"><div><div class="eyebrow">Ton concierge personnel</div><h1>Bonjour David 👋</h1><p class="lead">J’ai imaginé quelques bons moments pour tes groupes.</p></div><span class="concierge-spark">✦</span></div>
+    <div class="quick-compose"><div class="assistant-label">Une envie en tête&nbsp;?</div><div class="quick-compose-row"><input id="homeRequest" value="${escapeHTML(state.draftRequest)}" aria-label="Décrire une envie"><button id="homeSuggest" type="button" aria-label="Proposer">↑</button></div><small>Écris ou dicte une idée, je prépare les meilleures options.</small></div>
+    <div class="section-head"><div><div class="eyebrow">Sélection du jour</div><h2>Mes suggestions</h2></div><button class="secondary" id="newPlan">Tout demander</button></div>
+    <div class="suggestion-strip">${state.suggestions.map(item=>suggestionPreview(item)).join('')}</div>
+    <div class="invitation-stage"><div class="stage-caption"><span>Proposition prête à affiner</span><span>1 sur 3</span></div>${invitationCard(suggestion)}</div>
+    <div class="section-head"><h2>Mes groupes</h2><button class="secondary" id="addGroup">+ Créer</button></div>
+    <div class="home-groups">${state.groups.map(group=>homeGroupPill(group)).join('')}</div><div id="groupForm"></div>
   </section>`;
   document.getElementById('newPlan').addEventListener('click',()=>setTab('assistant'));
+  document.getElementById('homeSuggest').addEventListener('click',()=>{state.draftRequest=document.getElementById('homeRequest').value.trim()||state.draftRequest;state.selectedSuggestionId='bistro-17';saveState();render();document.querySelector('.invitation-stage')?.scrollIntoView({behavior:'smooth',block:'start'});});
   document.getElementById('addGroup').addEventListener('click',renderCreateGroupForm);
-  document.querySelectorAll('.group-open').forEach(button=>button.addEventListener('click',()=>{detailGroupId=button.dataset.id;render();}));
-  document.querySelectorAll('[data-action="plan"]').forEach(button=>button.addEventListener('click',()=>{
-    state.selectedGroupId=button.dataset.id; saveState(); setTab('assistant');
-  }));
+  document.querySelectorAll('.suggestion-preview').forEach(button=>button.addEventListener('click',()=>{state.selectedSuggestionId=button.dataset.id;state.selectedGroupId=state.suggestions.find(item=>item.id===button.dataset.id).groupId;saveState();render();}));
+  document.querySelectorAll('.home-group').forEach(button=>button.addEventListener('click',()=>{detailGroupId=button.dataset.id;render();}));
+  document.getElementById('startCoordination').addEventListener('click',()=>startSuggestionCoordination(suggestion));
+  document.getElementById('shareInvitation').addEventListener('click',()=>shareText(invitationShareText(suggestion)));
+}
+
+function suggestionPreview(item) {
+  const group=groupById(item.groupId);
+  return `<button class="suggestion-preview ${state.selectedSuggestionId===item.id?'selected':''}" data-id="${item.id}" type="button"><img src="${item.image}" alt=""><span class="preview-copy"><small>${escapeHTML(group?.name)}</small><strong>${escapeHTML(item.title)}</strong><span>${escapeHTML(item.period)}</span></span></button>`;
+}
+
+function invitationCard(item) {
+  const group=groupById(item.groupId);
+  return `<article class="invitation-card"><div class="invite-image"><img src="${item.image}" alt="${escapeHTML(item.venue)}"><span class="invite-tag">✦ ${escapeHTML(item.tag)}</span><span class="invite-match">${escapeHTML(item.match)}</span></div><div class="invite-body"><div class="invite-for">Pour ${escapeHTML(group?.name)}</div><h2>${escapeHTML(item.title)}</h2><p class="invite-description">${escapeHTML(item.description)}</p><div class="venue-line"><span class="venue-pin">⌖</span><div><strong>${escapeHTML(item.venue)}</strong><small>${escapeHTML(item.area)} · ★ ${escapeHTML(item.rating)}</small></div><a href="${item.mapUrl}" target="_blank" rel="noopener" aria-label="Voir sur Google Maps">↗</a></div><div class="invite-facts"><div><span>◷</span><small>Période</small><strong>${escapeHTML(item.period)}</strong></div><div><span>€</span><small>Budget</small><strong>${escapeHTML(item.price)}</strong></div></div><div class="coordination-note"><span class="pulse-dot"></span><div><strong>Je cherche la meilleure date</strong><small>Les calendriers et réponses du groupe seront croisés en parallèle.</small></div></div><div class="invite-actions"><button class="secondary" id="shareInvitation" type="button">Partager le carton</button><button class="primary" id="startCoordination" type="button">Lancer l’organisation</button></div></div></article>`;
+}
+
+function homeGroupPill(group) {
+  return `<button class="home-group" data-id="${group.id}" type="button"><span>${group.icon}</span><span><strong>${escapeHTML(group.name)}</strong><small>${group.members.length} membres</small></span><span>›</span></button>`;
+}
+
+function invitationShareText(item) {
+  return `✦ ${item.title}\nPour ${groupById(item.groupId)?.name}\n${item.venue} — ${item.area}\n${item.period}\n${item.price}\n${item.mapUrl}`;
+}
+
+function startSuggestionCoordination(item) {
+  const group=groupById(item.groupId); const responses={}; group.members.forEach(person=>responses[person.id]=person.id==='david'?'yes':'pending');
+  const activity={id:`suggestion-${Date.now()}`,groupId:item.groupId,title:item.title,request:item.description,criteria:[item.venue,item.area,item.period,item.price],place:item.venue,date:null,responses,reminded:[],createdAt:Date.now()};
+  state.activities.unshift(activity);saveState();detailActivityId=activity.id;currentTab='activities';document.querySelectorAll('[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab==='activities'));render();
 }
 
 function groupCard(group) {
