@@ -1,43 +1,53 @@
-const STORAGE_KEY = 'a-nous-pilot-v2';
+const STORAGE_KEY = 'a-nous-pilot-v3';
 
-const people = {
-  david: member('david','David','app',true,true,true,true),
-  clara: member('clara','Clara','app',true,true,true,true),
-  marc: member('marc','Marc','whatsapp',true,true,false,true),
-  sophie: member('sophie','Sophie','link',true,true,true,false),
-  alex: member('alex','Alex','sms',true,true,true,true),
-  julie: member('julie','Julie','email',true,false,false,false),
-  philippe: member('philippe','Philippe','email',true,true,false,true),
-  anne: member('anne','Anne','whatsapp',true,true,true,true),
-  lucas: member('lucas','Lucas','app',true,true,true,true),
-  emma: member('emma','Emma','whatsapp',false,false,false,false)
-};
+const people = { david: member('david','David','app',true,true,true,true) };
 
 function member(id,name,channel,invited,profile,calendar,push) {
-  return { id,name,initials:name.slice(0,1).toUpperCase(),channel,invited,profile,calendar,push,response:'pending',slots:[] };
+  return { id,name,initials:initials(name),channel,invited,profile,calendar,push,response:'pending',slots:[] };
 }
 
+function roster(groupId,names) {
+  const channels=['whatsapp','app','sms','email'];
+  return [structuredClone(people.david),...names.map((name,index)=>member(
+    `${groupId}-${index+1}`,name,channels[index%channels.length],true,true,index%5!==2,index%6!==3
+  ))];
+}
+
+const groupMembers = {
+  circl1: roster('circl1',['Raphaël Menu','Hadrien Lecca','Charles Garnier','Douglas Combettes','Thomas Hulin','Benoit Miltin','Julien Bergal','Gautier Desveaux','Hugo Ricou','Jessica Garbers','Alix Aldié','Raphaëla Malka','Hugzy Hugot','Laurent Di Nacera','Peter Quid','Jean-Romain Sparano']),
+  circl2: roster('circl2',['Nadine Daniell','Olivier Bruté De Rémur']),
+  circl3: roster('circl3',['Alexandre Perrin','Pablo de la Vega','Guillaume Coulomb','Nike Grote','Manu','Roxana']),
+  taff: roster('taff',['Fabien Huber','Ben Hayward','John Horoz','Prashant Khemka','Hiren Dasani','Manoj Garg','Fadrique Balmaseda','Ayush Abhijeet','Loong Lim']),
+  famil1: roster('famil1',['Julie Boirel','Pascal Meicler','Christine Meicler','Laure Meicler','Julien XXXX','Rebecca Meicler','Rachel Meicler','Serge Meicler']),
+  famil2: roster('famil2',['Philippe Meicler','Ghislaine Meicler','Sophie Meicler','Antoine Meicler','Sofia Meicler','Alexandra Meicler','Anaïs Meicler','Rémy Nicolaï','Brigitte Nicolaï','Jennifer Nicolaï','Eric Nicolaï','Maximilien Nicolaï','Marion Nicolaï','François Nicolaï','Collin Nicolaï','Vincent Nicolaï','Elsa Nicolaï']),
+  belfamil: roster('belfamil',['Marie-Anne Bouscarles','Eric Bouscarles','Kévin Boirel Laly Boirel','Clément Bouscarles','Franck Boirel','Coco Boirel'])
+};
+
 const defaultState = {
-  selectedGroupId:'friends',
+  selectedGroupId:'circl1',
   groups:[
-    { id:'friends',name:'Les proches',type:'Amis',icon:'🥂',members:[people.david,people.clara,people.marc,people.sophie,people.alex] },
-    { id:'family',name:'La famille',type:'Famille',icon:'🏡',members:[people.david,people.julie,people.philippe,people.anne] },
-    { id:'colleagues',name:'Les collègues',type:'Collègues',icon:'☕',members:[people.david,people.lucas,people.emma] }
+    { id:'circl1',name:'CIRCL 1',type:'Amis',icon:'🥂',members:groupMembers.circl1 },
+    { id:'circl2',name:'CIRCL 2',type:'Amis',icon:'🥂',members:groupMembers.circl2 },
+    { id:'circl3',name:'CIRCL 3',type:'Amis',icon:'🥂',members:groupMembers.circl3 },
+    { id:'taff',name:'TAFF',type:'Collègues',icon:'☕',members:groupMembers.taff },
+    { id:'famil1',name:'FAMIL 1',type:'Famille',icon:'🏡',members:groupMembers.famil1 },
+    { id:'famil2',name:'FAMIL 2',type:'Famille',icon:'🏡',members:groupMembers.famil2 },
+    { id:'belfamil',name:'BEL FAMIL',type:'Famille',icon:'🏡',members:groupMembers.belfamil }
   ],
   activities:[
     {
-      id:'dinner-17',groupId:'friends',title:'Resto & billard',request:'Un resto à la bonne franquette, plutôt quali, dans le 17e à Paris, où on peut jouer au billard, dans deux semaines.',
+      id:'dinner-17',groupId:'circl1',title:'Resto & billard',request:'Un resto à la bonne franquette, plutôt quali, dans le 17e à Paris, où on peut jouer au billard, dans deux semaines.',
       criteria:['Restaurant','Dans deux semaines','Paris 17e','Bonne franquette','Plutôt quali','Billard'],place:'Club 17 · proposition',date:null,
-      responses:{david:'yes',clara:'yes',marc:'pending',sophie:'yes',alex:'pending'},reminded:[],createdAt:Date.now()
+      responses:Object.fromEntries(groupMembers.circl1.map((person,index)=>[person.id,index<4?'yes':'pending'])),reminded:[],createdAt:Date.now()
     },
     {
-      id:'family-lunch',groupId:'family',title:'Déjeuner de famille',request:'Un déjeuner familial un dimanche, accessible et calme.',
+      id:'family-lunch',groupId:'famil1',title:'Déjeuner de famille',request:'Un déjeuner familial un dimanche, accessible et calme.',
       criteria:['Déjeuner','Dimanche','Calme','Accessible'],place:'À trouver',date:null,
-      responses:{david:'yes',julie:'pending',philippe:'yes',anne:'pending'},reminded:[],createdAt:Date.now()-86400000
+      responses:Object.fromEntries(groupMembers.famil1.map((person,index)=>[person.id,index<3?'yes':'pending'])),reminded:[],createdAt:Date.now()-86400000
     }
   ],
   profile:{name:'David',photo:null,interests:['Bonnes tables','Week-ends','Randonnée'],calendar:false,push:false,location:false},
-  draftRequest:'Hey, organise-moi un resto dans deux semaines avec les proches : à la bonne franquette, plutôt quali, dans le 17e à Paris, où on peut jouer au billard.'
+  draftRequest:'Hey, organise-moi un resto dans deux semaines avec CIRCL 1 : à la bonne franquette, plutôt quali, dans le 17e à Paris, où on peut jouer au billard.'
 };
 
 let state = loadState();
